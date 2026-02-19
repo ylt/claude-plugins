@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-stuff",
+  "description": "Mixed personal Claude Code plugins and tools",
+  "owner": {
+    "name": "Joe"
+  },
+  "plugins": [
+    {
+      "name": "toolkit",
+      "description": "Personal skills and tools",
+      "version": "1.0.0",
+      "source": "./plugins/toolkit",
+      "category": "productivity"
+    }
+  ]
+}
