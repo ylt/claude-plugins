@@ -1,5 +1,5 @@
 ---
-name: dark-dev-humor
+name: quip
 description: >
   Generate dark, dry tech humor using specific joke frameworks. Use when the user
   asks for a joke, wants something funny, asks to be entertained, requests memes,
