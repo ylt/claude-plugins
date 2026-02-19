@@ -7,10 +7,10 @@
   },
   "plugins": [
     {
-      "name": "toolkit",
+      "name": "joes-toolkit",
       "description": "Personal skills and tools",
       "version": "1.0.0",
-      "source": "./plugins/toolkit",
+      "source": "./plugins/joes-toolkit",
       "category": "productivity"
     }
   ]
