@@ -50,3 +50,14 @@ Four skills work together for Obsidian vault operations:
 - `markdown-vault-sync` — two-phase workflow for syncing content into the vault
 
 The vault skill always reads `VAULT.md` from the live vault first via MCP tools. The sync skill proposes placement before executing, and separates page creation from index maintenance.
+
+## Pre-commit Hook
+
+A git pre-commit hook (`.githooks/pre-commit`) validates `marketplace.json` against plugin directories on every commit. Activated via `git config core.hooksPath .githooks`.
+
+- Every `plugins/*/` with a `.claude-plugin/plugin.json` must have a matching entry in `marketplace.json`
+- Every `marketplace.json` entry must point to an existing plugin directory
+- `name`, `version`, and `description` must match between `plugin.json` and `marketplace.json`
+- Staged changes to a plugin's files require a version bump in that plugin's `plugin.json`
+
+Run manually with `.githooks/pre-commit`. Requires `jq`.

@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+MARKETPLACE="$REPO_ROOT/.claude-plugin/marketplace.json"
+ERRORS=()
+
+if [[ ! -f "$MARKETPLACE" ]]; then
+  echo "ERROR: marketplace.json not found at $MARKETPLACE"
+  exit 1
+fi
+
+# 1. Check every plugin dir is registered and fields match
+for plugin_json in "$REPO_ROOT"/plugins/*/.claude-plugin/plugin.json; do
+  [[ -f "$plugin_json" ]] || continue
+
+  plugin_name=$(jq -r '.name' "$plugin_json")
+  plugin_version=$(jq -r '.version' "$plugin_json")
+  plugin_desc=$(jq -r '.description' "$plugin_json")
+  plugin_dir=$(dirname "$(dirname "$plugin_json")")
+  plugin_rel="./plugins/$(basename "$plugin_dir")"
+
+  # Find matching marketplace entry by name
+  mp_entry=$(jq -r --arg name "$plugin_name" '.plugins[] | select(.name == $name)' "$MARKETPLACE")
+
+  if [[ -z "$mp_entry" ]]; then
+    ERRORS+=("Plugin '$plugin_name' (at $plugin_rel) not found in marketplace.json")
+    continue
+  fi
+
+  mp_version=$(echo "$mp_entry" | jq -r '.version')
+  mp_desc=$(echo "$mp_entry" | jq -r '.description')
+
+  if [[ "$plugin_version" != "$mp_version" ]]; then
+    ERRORS+=("Version mismatch for '$plugin_name': plugin.json=$plugin_version, marketplace=$mp_version")
+  fi
+
+  if [[ "$plugin_desc" != "$mp_desc" ]]; then
+    ERRORS+=("Description mismatch for '$plugin_name': plugin.json=\"$plugin_desc\", marketplace=\"$mp_desc\"")
+  fi
+done
+
+# 2. Check no stale marketplace entries
+mp_count=$(jq '.plugins | length' "$MARKETPLACE")
+for ((i = 0; i < mp_count; i++)); do
+  source_path=$(jq -r ".plugins[$i].source" "$MARKETPLACE")
+  mp_name=$(jq -r ".plugins[$i].name" "$MARKETPLACE")
+  full_path="$REPO_ROOT/${source_path#./}"
+
+  if [[ ! -d "$full_path" ]]; then
+    ERRORS+=("Marketplace entry '$mp_name' points to missing directory: $source_path")
+  elif [[ ! -f "$full_path/.claude-plugin/plugin.json" ]]; then
+    ERRORS+=("Marketplace entry '$mp_name' source exists but missing .claude-plugin/plugin.json: $source_path")
+  fi
+done
+
+# 3. Check for staged plugin changes without a version bump
+for plugin_dir in "$REPO_ROOT"/plugins/*/; do
+  [[ -d "$plugin_dir" ]] || continue
+
+  plugin_rel="plugins/$(basename "$plugin_dir")"
+  plugin_json="$plugin_dir.claude-plugin/plugin.json"
+  [[ -f "$plugin_json" ]] || continue
+
+  # Get staged files under this plugin dir (excluding plugin.json itself)
+  staged_files=$(git diff --cached --name-only -- "$plugin_rel" | grep -v "^${plugin_rel}/.claude-plugin/plugin.json$" || true)
+
+  if [[ -n "$staged_files" ]]; then
+    # Check if plugin.json version differs from HEAD
+    head_version=$(git show HEAD:"${plugin_rel}/.claude-plugin/plugin.json" 2>/dev/null | jq -r '.version' 2>/dev/null || echo "")
+    current_version=$(jq -r '.version' "$plugin_json")
+
+    if [[ -n "$head_version" && "$current_version" == "$head_version" ]]; then
+      plugin_name=$(jq -r '.name' "$plugin_json")
+      ERRORS+=("Plugin '$plugin_name' has staged changes but version is unchanged ($current_version). Bump the version in $plugin_rel/.claude-plugin/plugin.json")
+    fi
+  fi
+done
+
+# Report results
+if [[ ${#ERRORS[@]} -gt 0 ]]; then
+  echo "marketplace.json validation failed:"
+  for err in "${ERRORS[@]}"; do
+    echo "  - $err"
+  done
+  exit 1
+fi
+
+echo "marketplace.json validation passed."
+exit 0
