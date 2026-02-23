@@ -12,6 +12,13 @@
       "version": "1.0.0",
       "source": "./plugins/joes-toolkit",
       "category": "productivity"
+    },
+    {
+      "name": "joe-git-ops",
+      "description": "Git workflow skills and tools",
+      "version": "1.0.0",
+      "source": "./plugins/joe-git-ops",
+      "category": "productivity"
     }
   ]
 }
