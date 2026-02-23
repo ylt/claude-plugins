@@ -30,12 +30,17 @@ git commit -m "Description of changes"
 ### 2. Identify Commits to Rebase
 
 ```bash
-# View recent commits
-git log --oneline -N  # where N is number of commits to review
+# Fetch latest remote state
+git fetch origin
 
-# Identify the base commit (the one BEFORE your changes)
-# Example: if you want to squash the last 5 commits, use HEAD~5
+# Find the fork point — the commit where your branch diverged from origin/main
+BASE=$(git merge-base origin/main HEAD)
+
+# View all commits on your branch since the fork point
+git log --oneline $BASE..HEAD
 ```
+
+This is more reliable than manually counting with `HEAD~N` — it automatically finds exactly the right base regardless of how many commits exist on the branch.
 
 ### 3. Create Rebase Plan File
 
@@ -64,11 +69,11 @@ EOF
 ### 4. Execute Rebase
 
 ```bash
-# Use GIT_SEQUENCE_EDITOR to point to your plan file
-GIT_SEQUENCE_EDITOR='cp /tmp/git-rebase-todo' git rebase -i HEAD~N
+# Use GIT_SEQUENCE_EDITOR to point to your plan file, rebase onto the fork point
+GIT_SEQUENCE_EDITOR='cp /tmp/git-rebase-todo' git rebase -i $BASE
 ```
 
-Where N is the number of commits to rebase (must match your plan).
+Where `$BASE` is the merge-base commit found in step 2.
 
 ### 5. Handle Interactive Steps
 
@@ -116,11 +121,12 @@ git rebase -i HEAD~5  # Will hang waiting for interactive input
 
 ### ✅ DO: Use GIT_SEQUENCE_EDITOR
 ```bash
+BASE=$(git merge-base origin/main HEAD)
 cat > /tmp/rebase-plan << 'EOF'
 pick abc123
 fixup def456
 EOF
-GIT_SEQUENCE_EDITOR='cp /tmp/rebase-plan' git rebase -i HEAD~2
+GIT_SEQUENCE_EDITOR='cp /tmp/rebase-plan' git rebase -i $BASE
 ```
 
 ---
@@ -136,7 +142,9 @@ git stash pop
 ```bash
 git add .
 git commit -m "WIP changes"
-git rebase -i HEAD~6  # Include the new commit in rebase
+# Now rebase all branch commits including the new one
+BASE=$(git merge-base origin/main HEAD)
+GIT_SEQUENCE_EDITOR='cp /tmp/rebase-plan' git rebase -i $BASE
 ```
 
 ---
@@ -149,7 +157,8 @@ git reset --soft HEAD~5  # Dangerous - loses commit metadata
 ### ✅ DO: Use proper rebase workflow
 ```bash
 # Creates clean history while preserving authorship and timestamps
-GIT_SEQUENCE_EDITOR='cp /tmp/plan' git rebase -i HEAD~5
+BASE=$(git merge-base origin/main HEAD)
+GIT_SEQUENCE_EDITOR='cp /tmp/plan' git rebase -i $BASE
 ```
 
 ---
@@ -187,9 +196,11 @@ a - Fix migration part 1
 
 **Steps**:
 
-1. **Verify current state**:
+1. **Find fork point and verify current state**:
 ```bash
-git log --oneline -6
+git fetch origin
+BASE=$(git merge-base origin/main HEAD)
+git log --oneline $BASE..HEAD
 # f - Fix test-backend changes
 # e - Fix migration part 4
 # d - Fix migration part 3
@@ -214,17 +225,18 @@ Note: Commits must be in chronological order (oldest first)!
 
 3. **Execute rebase**:
 ```bash
-GIT_SEQUENCE_EDITOR='cp /tmp/git-rebase-todo' git rebase -i HEAD~6
+GIT_SEQUENCE_EDITOR='cp /tmp/git-rebase-todo' git rebase -i $BASE
 ```
 
-4. **Reword commit messages** (optional):
+4. **Reword commit messages** (optional, second rebase pass):
 ```bash
+NEW_BASE=$(git merge-base origin/main HEAD)
 cat << 'EOF' > /tmp/git-rebase-todo
 reword <hash-a> Fix migration part 1
 reword <hash-b> Fix test-engine changes
 reword <hash-f> Fix test-backend changes
 EOF
-GIT_SEQUENCE_EDITOR='cp /tmp/git-rebase-todo' git rebase -i HEAD~3
+GIT_SEQUENCE_EDITOR='cp /tmp/git-rebase-todo' git rebase -i $NEW_BASE
 
 # When stopped at each commit:
 git commit --amend -m "Better commit message with details"
@@ -239,7 +251,8 @@ git push --force-with-lease
 
 ## Tips
 
-- **Count carefully**: HEAD~N must match the number of commits in your plan
+- **Use merge-base**: Always use `git merge-base origin/main HEAD` to find the fork point — avoids miscounting commits
+- **Fetch first**: Run `git fetch origin` before merge-base to ensure you have the latest remote state
 - **Check order**: Rebase plans list commits oldest-to-newest (opposite of git log)
 - **Use fixup**: Prefer `fixup` over `squash` to avoid accumulating commit messages
 - **Verify before push**: Always check `git log` before force pushing
