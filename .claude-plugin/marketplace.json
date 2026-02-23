@@ -8,9 +8,16 @@
   "plugins": [
     {
       "name": "joes-toolkit",
-      "description": "Personal skills and tools",
-      "version": "1.0.0",
+      "description": "Humor and plugin creation skills",
+      "version": "1.1.0",
       "source": "./plugins/joes-toolkit",
+      "category": "productivity"
+    },
+    {
+      "name": "joe-obsidian",
+      "description": "Obsidian vault management skills",
+      "version": "1.0.0",
+      "source": "./plugins/joe-obsidian",
       "category": "productivity"
     },
     {

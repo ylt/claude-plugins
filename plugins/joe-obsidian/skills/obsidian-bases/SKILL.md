@@ -136,7 +136,6 @@ filters:
 | `file.mtime` | Date | Modified time |
 | `file.tags` | List | All tags in file |
 | `file.links` | List | Internal links in file |
-| `file.backlinks` | List | Files linking to this file |
 | `file.embeds` | List | Embeds in the note |
 | `file.properties` | Object | All frontmatter properties |
 

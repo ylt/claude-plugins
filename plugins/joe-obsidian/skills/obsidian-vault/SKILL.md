@@ -60,7 +60,7 @@ Use `mcp__obsidian__graph` to check connectivity:
 
 - `statistics` - get link counts and identify orphans
 - `neighbors` with a sourcePath - check a note's connections
-- `backlinks` / `forwardlinks` - verify bidirectional linking
+- `forwardlinks` - verify outgoing links
 - `traverse` from category entry points to verify reachability
 
 **Every note must be reachable from an index. No orphaned files.**

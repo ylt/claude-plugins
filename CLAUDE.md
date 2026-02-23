@@ -11,15 +11,18 @@ A Claude Code plugin marketplace containing personal plugins. There is no build 
 ```
 .claude-plugin/marketplace.json    # Marketplace manifest — registers plugins
 plugins/
-  joes-toolkit/                    # Obsidian, humor, and plugin-creation skills
+  joes-toolkit/                    # Humor and plugin creation skills
+    .claude-plugin/plugin.json
+    skills/
+      quip/                        # Dark dev humor generation with reference formats
+      plugin-creator/              # Guide + scaffolder for creating Claude Code plugins
+  joe-obsidian/                    # Obsidian vault management skills
     .claude-plugin/plugin.json
     skills/
       obsidian-vault/              # Vault organization, classification, graph health
       obsidian-markdown/           # Obsidian Flavored Markdown syntax reference
       obsidian-bases/              # Obsidian Bases (.base files) reference
       markdown-vault-sync/         # Sync markdown content to Obsidian vault
-      quip/                        # Dark dev humor generation with reference formats
-      plugin-creator/              # Guide + scaffolder for creating Claude Code plugins
   joe-git-ops/                     # Git workflow skills
     .claude-plugin/plugin.json
     skills/
