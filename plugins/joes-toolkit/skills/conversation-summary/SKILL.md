@@ -20,13 +20,19 @@ For ChatGPT JSON exports, parse the JSON to extract messages first, then chunk t
 
 ### Phase 2: Parallel Granular Analysis
 
-Spawn **one sonnet agent per chunk** using `run_in_background: true`. Each agent reads one chunk and produces a standardized analysis.
+Spawn **one `joes-toolkit:conversation-chunk-analyzer` agent per chunk** using `run_in_background: true`. Each agent reads one chunk and produces a standardized 8-section analysis.
 
-See [references/analysis-template.md](references/analysis-template.md) for the full agent prompt template and section customization guide.
+```
+Task(
+  subagent_type="joes-toolkit:conversation-chunk-analyzer",
+  run_in_background=true,
+  prompt="Analyze chunk {N} of {TOTAL}. Context: {BRIEF_DESCRIPTION}. {CONTINUITY_CONTEXT}. Read: {CHUNK_PATH}. Write analysis to: {OUTPUT_PATH}"
+)
+```
 
 Key points:
-- Each analysis uses an **8-section format**: Timeline & Context, Key Events, Exact Words, Advice Given vs Acted On, Physical/Setup Details, Participant Observations, Emotional Arc, Open Threads
-- Sections are adaptable — see [references/conversation-types.md](references/conversation-types.md) for type-specific modifications
+- The agent produces an **8-section format**: Timeline & Context, Key Events, Exact Words, Advice Given vs Acted On, Physical/Setup Details, Participant Observations, Emotional Arc, Open Threads
+- Sections are adaptable by conversation type — see [references/conversation-types.md](references/conversation-types.md)
 - The previous chunk's last 2 lines provide continuity context for the next chunk's agent
 - **Exact quotes are non-negotiable** — 10-20 per chunk minimum
 
@@ -38,9 +44,14 @@ Key points:
 
 ### Phase 4: Narrative Synthesis
 
-Spawn **one opus agent** with access to all analysis files. It reads every analysis and produces a cohesive narrative synthesis.
+Spawn **one `joes-toolkit:conversation-synthesizer` agent** with access to all analysis files. It reads every analysis and produces a cohesive narrative synthesis.
 
-See [references/synthesis-template.md](references/synthesis-template.md) for the full synthesis prompt and guidelines.
+```
+Task(
+  subagent_type="joes-toolkit:conversation-synthesizer",
+  prompt="Synthesize analyses into a narrative. Analysis files: {LIST_PATHS}. Write to: {SYNTHESIS_PATH}"
+)
+```
 
 Key points:
 - Structure emerges from content — don't force a template
