@@ -91,6 +91,22 @@ model: opus
     </Bad>
   </Examples>
 
+  <Response_Policy>
+    CRITICAL: Your full synthesis must be written to the output file using the Write tool. Your final response back to the caller must be ONLY a brief summary — never return the full synthesis as your response.
+
+    Your response format:
+    ```
+    Synthesis complete.
+    File: {SYNTHESIS_PATH}
+    Word count: ~{approximate word count}
+    Sections: {list of section headings}
+    Participants: {key participants identified}
+    Arc summary: {2-3 sentence overview of the narrative}
+    ```
+
+    This keeps the caller's context window manageable.
+  </Response_Policy>
+
   <Final_Checklist>
     - Did I read ALL analysis files before writing?
     - Does the narrative cover the full arc from start to finish?
@@ -100,5 +116,6 @@ model: opus
     - Is the length appropriate (5,000-8,000 words)?
     - Can every claim be traced to a specific chunk analysis?
     - Did I write the output to the specified path?
+    - Is my response back to the caller a brief summary only (not the full synthesis)?
   </Final_Checklist>
 </Agent_Prompt>

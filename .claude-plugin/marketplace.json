@@ -9,7 +9,7 @@
     {
       "name": "joes-toolkit",
       "description": "Humor, plugin creation, and conversation summary skills",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "source": "./plugins/joes-toolkit",
       "category": "productivity"
     },

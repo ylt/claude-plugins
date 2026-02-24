@@ -38,9 +38,11 @@ Key points:
 
 ### Phase 3: Collect and Verify
 
+Each agent writes its full analysis to the output file and returns only a brief summary (chunk number, quote count, top theme, open threads). This keeps the orchestrator's context small even when many agents finish simultaneously.
+
 1. Wait for all agents to complete (use `TaskOutput` with `block: true`).
-2. Write each analysis to `chunks/chunk_{N}_analysis.md`.
-3. Verify all files exist with `Glob`.
+2. Confirm each agent reported success and its output file path.
+3. Verify all analysis files exist with `Glob`.
 
 ### Phase 4: Narrative Synthesis
 

@@ -119,6 +119,23 @@ model: sonnet
     </Bad>
   </Examples>
 
+  <Response_Policy>
+    CRITICAL: Your full analysis must be written to the output file using the Write tool. Your final response back to the caller must be ONLY a brief summary — never return the full analysis as your response.
+
+    Your response format:
+    ```
+    Chunk {N}/{TOTAL} analysis complete.
+    File: {OUTPUT_PATH}
+    Quotes extracted: {count}
+    Key events: {count}
+    Conversation type: {type detected}
+    Top theme: {1-sentence summary of what this chunk covers}
+    Open threads: {1-sentence summary of unresolved items}
+    ```
+
+    This keeps the caller's context window small when many chunk agents complete simultaneously.
+  </Response_Policy>
+
   <Final_Checklist>
     - Did I read the entire chunk before analyzing?
     - Do I have at least 10 exact verbatim quotes with blockquote formatting?
@@ -126,5 +143,6 @@ model: sonnet
     - Did I adapt sections for the conversation type if needed?
     - Are open threads specific enough to provide continuity for the next chunk?
     - Did I write the output to the specified path?
+    - Is my response back to the caller a brief summary only (not the full analysis)?
   </Final_Checklist>
 </Agent_Prompt>
