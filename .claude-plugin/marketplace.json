@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "joes-toolkit",
-      "description": "Humor and plugin creation skills",
-      "version": "1.1.0",
+      "description": "Humor, plugin creation, and conversation summary skills",
+      "version": "1.2.0",
       "source": "./plugins/joes-toolkit",
       "category": "productivity"
     },
