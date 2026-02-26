@@ -1,6 +1,6 @@
 {
   "name": "joe-git-ops",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Git workflow skills and tools",
   "keywords": ["git", "workflow", "rebase", "commits"]
 }

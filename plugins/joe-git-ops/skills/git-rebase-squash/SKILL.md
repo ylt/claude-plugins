@@ -36,13 +36,57 @@ git fetch origin
 # Find the fork point — the commit where your branch diverged from origin/main
 BASE=$(git merge-base origin/main HEAD)
 
-# View all commits on your branch since the fork point
+# View all commits on your branch since the fork point, with size info
 git log --oneline $BASE..HEAD
 ```
 
-This is more reliable than manually counting with `HEAD~N` — it automatically finds exactly the right base regardless of how many commits exist on the branch.
+**Before proceeding, sanity-check the commit list. Confirm with the user if any of the following apply:**
+- The branch is more than ~20 commits ahead of `origin/main` and no base was specified
+- The commits look unrelated to what the user described (e.g. a mix of entirely different features), suggesting the wrong base was found
+- Any commit in the list is a **merge commit** (`Merge branch ...`) — rebasing over a merge commit will likely produce unexpected results
 
-### 3. Create Rebase Plan File
+When confirming, phrase it as a single question covering whichever flags triggered: *"Before I proceed — this branch is N commits ahead of `origin/main` [and/or includes a merge commit / includes unrelated commits]. Is `origin/main` the right base, or should I use a different one?"*
+
+```bash
+git log $BASE..HEAD --format="%h %s" | while read hash msg; do
+  stats=$(git diff-tree --no-commit-id -r --stat $hash | tail -1)
+  echo "$hash | $stats | $msg"
+done
+```
+
+This gives you a per-commit breakdown of files changed and lines added/removed — essential for deciding how to group commits.
+
+### 3. Present Squash Options
+
+Before running the rebase, **present the user with 2–3 breakdown options** at different commit counts (e.g. into 3, 4, 5 commits). For each option show:
+- The proposed commit groups with their combined size (files / LOC)
+- A recommended option with a brief rationale (e.g. "4 commits keeps CI/CD infra separate from engine changes")
+
+Example presentation format:
+
+```
+**Option A — 3 commits** ⭐ recommended
+  1. Add CI/CD pipeline and deploy infrastructure  (12 files, +450/-80)
+  2. Add OTEL telemetry and fix git identity       (4 files, +45/-12)
+  3. Add HTTPRoute and HealthCheckPolicy           (4 files, +57/-3)
+
+**Option B — 4 commits**
+  1. Fix Helm chart security contexts              (3 files, +18/-6)
+  2. Add CI/CD pipeline and deploy scripts         (9 files, +432/-74)
+  3. Add OTEL telemetry and fix git identity       (4 files, +45/-12)
+  4. Add HTTPRoute and HealthCheckPolicy           (4 files, +57/-3)
+
+**Option C — 5 commits**
+  1. Fix Helm chart security contexts              (3 files, +18/-6)
+  2. Add CI/CD pipeline and deploy scripts         (9 files, +432/-74)
+  3. Add OTEL telemetry config                     (3 files, +39/-8)
+  4. Fix git identity in push_branch               (1 file,  +6/-4)
+  5. Add HTTPRoute and HealthCheckPolicy           (4 files, +57/-3)
+```
+
+Wait for user to confirm before proceeding.
+
+### 4. Create Rebase Plan File
 
 Create a file with the rebase instructions:
 
@@ -66,7 +110,7 @@ EOF
 
 **Order**: Commits are listed from oldest to newest (chronological order)
 
-### 4. Execute Rebase
+### 5. Execute Rebase
 
 ```bash
 # Use GIT_SEQUENCE_EDITOR to point to your plan file, rebase onto the fork point
@@ -75,7 +119,7 @@ GIT_SEQUENCE_EDITOR='cp /tmp/git-rebase-todo' git rebase -i $BASE
 
 Where `$BASE` is the merge-base commit found in step 2.
 
-### 5. Handle Interactive Steps
+### 6. Handle Interactive Steps
 
 If you used `edit` or `reword` commands:
 
@@ -90,17 +134,21 @@ git commit --amend -m "New commit message"
 git rebase --continue
 ```
 
-### 6. Verify Result
+### 7. Verify Result
 
 ```bash
 # Check the new history
-git log --oneline -N
+git log --oneline origin/main..HEAD
 
-# View detailed commit messages
-git log -N --format="commit %h%n%s%n%b"
+# Diff against the old HEAD — must be empty
+git diff <old-HEAD> HEAD --stat
+
+# If the diff is non-empty, the rebase dropped or altered content — abort and investigate
 ```
 
-### 7. Force Push
+**Always diff against the old HEAD before pushing.** A non-empty diff means commits were dropped or conflicts were resolved incorrectly.
+
+### 8. Force Push
 
 Since rebase rewrites history:
 
@@ -251,12 +299,13 @@ git push --force-with-lease
 
 ## Tips
 
-- **Use merge-base**: Always use `git merge-base origin/main HEAD` to find the fork point — avoids miscounting commits
-- **Fetch first**: Run `git fetch origin` before merge-base to ensure you have the latest remote state
+- **Fetch first**: Always run `git fetch origin` before finding the base — a stale ref will give you the wrong merge-base
+- **Your rebase plan must list ALL commits between BASE and HEAD**: If you omit any, they get silently dropped. Use `git log $BASE..HEAD` to confirm the full list before writing the plan
 - **Check order**: Rebase plans list commits oldest-to-newest (opposite of git log)
-- **Use fixup**: Prefer `fixup` over `squash` to avoid accumulating commit messages
-- **Verify before push**: Always check `git log` before force pushing
-- **--force-with-lease**: Safer than `--force`—prevents overwriting unexpected remote changes
+- **Use fixup**: Prefer `fixup` over `squash` to avoid accumulating commit messages; use `reword` on the lead commit if you want a better message
+- **Present options first**: Show 2–3 breakdown options with sizes before running anything — let the user choose
+- **Diff before push**: Always run `git diff <old-HEAD> HEAD --stat` after rebasing and before force pushing — empty diff = safe
+- **--force-with-lease**: Safer than `--force` — fails if the remote has moved on since your last fetch
 
 ## When Things Go Wrong
 
